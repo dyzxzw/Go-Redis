@@ -35,7 +35,7 @@ new----->newobject
 词法分析---》句法分析---》语义分析----》中间码生成----》代码优化----》机器码生成-----》链接
 ```
 
-[GoRedis.assets/image-20220606150015781.png](https://github.com/dyzxzw/go-redis/blob/master/GoRedis.assets/image-20220606150015781.png))
+[GoRedis.assets/image-20220606150015781.png](https://github.com/dyzxzw/go-redis/blob/master/GoRedis.assets/image-20220606150015781.png)
 
 ## 中间码生成（SSA)
 
