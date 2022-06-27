@@ -5,7 +5,10 @@ import (
 	"go-redis/interface/tcp"
 	"go-redis/lib/logger"
 	"net"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 /**
@@ -22,7 +25,20 @@ type Config struct {
 
 func ListenAndServeWithSignal(cfg *Config,handler tcp.Handler)error{
 	listener, err := net.Listen("tcp", cfg.Address)
+
 	closeChan:=make(chan struct{})
+
+	sigChan:=make(chan os.Signal)
+	signal.Notify(sigChan,syscall.SIGHUP,syscall.SIGQUIT,syscall.SIGTERM,syscall.SIGINT)
+
+	go func() {
+		sig:=<-sigChan
+		switch sig {
+		case syscall.SIGHUP,syscall.SIGQUIT,syscall.SIGTERM,syscall.SIGINT:
+			closeChan<- struct{}{}
+		}
+	}()
+
 	if err!=nil{
 		return err
 	}
@@ -32,6 +48,20 @@ func ListenAndServeWithSignal(cfg *Config,handler tcp.Handler)error{
 }
 
 func ListenAndServer(listener net.Listener, handler tcp.Handler, closeChan <-chan struct{}){
+
+	go func() {
+		<-closeChan  //收到信号 关闭listener和handler
+		logger.Info("shutting down")
+		_ = listener.Close()
+		_ = handler.Close()
+	}()
+
+	//退出时关闭
+	defer func() {
+		_ = listener.Close()
+		_ = handler.Close()
+	}()
+
 	ctx := context.Background()
 	var waitDone sync.WaitGroup //等待所有客户端退出
 	//不断接受新链接
